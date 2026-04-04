@@ -1,0 +1,2 @@
+ALTER TABLE events DROP COLUMN IF EXISTS ticket_price;
+ALTER TABLE events DROP COLUMN IF EXISTS total_slots;

@@ -12,6 +12,10 @@ export default defineConfig({
         target: 'http://backend:4000',
         changeOrigin: true,
       },
+      '/static': {
+        target: 'http://backend:4000',
+        changeOrigin: true,
+      },
     },
   },
 })

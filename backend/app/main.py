@@ -35,7 +35,7 @@ SEEDED_EVENTS = [
         "event_date": datetime.now(timezone.utc) + timedelta(days=21, hours=11),
         "venue_name": "New Frontier Theater",
         "venue_address": "Araneta City, Quezon City, Metro Manila",
-        "poster_url": "http://localhost:4000/static/posters/manila-soundscape.jpg",
+        "poster_url": "/static/posters/manila-soundscape.jpg",
         "status": "published",
         "producer_name": "Harana Events PH",
         "ticket_types": [
@@ -53,7 +53,7 @@ SEEDED_EVENTS = [
         "event_date": datetime.now(timezone.utc) + timedelta(days=35, hours=9),
         "venue_name": "Samsung Performing Arts Theater",
         "venue_address": "Circuit Makati, Makati City, Metro Manila",
-        "poster_url": "http://localhost:4000/static/posters/tanghalang-gala.jpg",
+        "poster_url": "/static/posters/tanghalang-gala.jpg",
         "status": "published",
         "producer_name": "Stagehouse Manila",
         "ticket_types": [
@@ -71,7 +71,7 @@ SEEDED_EVENTS = [
         "event_date": datetime.now(timezone.utc) + timedelta(days=49, hours=10),
         "venue_name": "The Theatre at Solaire",
         "venue_address": "Solaire Resort, Parañaque City, Metro Manila",
-        "poster_url": "http://localhost:4000/static/posters/philharmonic-evening.jpg",
+        "poster_url": "/static/posters/philharmonic-evening.jpg",
         "status": "published",
         "producer_name": "Maestro Productions",
         "ticket_types": [
@@ -774,7 +774,7 @@ async def admin_upload_poster(event_id: UUID, request: Request, file: UploadFile
         with target_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        poster_url = f"http://localhost:4000/static/posters/{filename}"
+        poster_url = f"/static/posters/{filename}"
         await connection.execute(
             "UPDATE events SET poster_url = $2 WHERE id = $1;",
             event_id,

@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { Link, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
+
+const SITE_NAME = 'Ticketorbi'
 
 const listDateFormatter = new Intl.DateTimeFormat('en-PH', {
   month: 'short',
@@ -38,7 +40,7 @@ function formatPrice(price) {
 }
 
 function getConfirmationStorageKey(bookingReference) {
-  return `ticketmacoi-order-${bookingReference}`
+  return `ticketorbi-order-${bookingReference}`
 }
 
 async function requestJson(url, options) {
@@ -67,6 +69,229 @@ function getTotalSlots(ticketTypes) {
   return ticketTypes.reduce((sum, ticketType) => sum + (ticketType.total_slots || 0), 0)
 }
 
+/* ──────────── Navbar ──────────── */
+
+function Navbar() {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const location = useLocation()
+
+  useEffect(() => {
+    setMenuOpen(false)
+  }, [location.pathname])
+
+  return (
+    <>
+      <nav className="navbar">
+        <div className="navbar-inner">
+          <Link className="navbar-logo" to="/">{SITE_NAME}</Link>
+          <div className="navbar-links">
+            <Link to="/" className={location.pathname === '/' ? 'active' : ''}>Home</Link>
+            <Link to="/events" className={location.pathname === '/events' ? 'active' : ''}>Events</Link>
+            <Link to="/classes" className={location.pathname === '/classes' ? 'active' : ''}>Classes</Link>
+          </div>
+          <button
+            className="navbar-hamburger"
+            onClick={() => setMenuOpen(true)}
+            aria-label="Open menu"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+        </div>
+      </nav>
+      <div className={`mobile-menu ${menuOpen ? 'open' : ''}`} onClick={() => setMenuOpen(false)}>
+        <div className="mobile-menu-panel" onClick={(e) => e.stopPropagation()}>
+          <button className="mobile-menu-close" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+          <Link to="/">Home</Link>
+          <Link to="/events">Events</Link>
+          <Link to="/classes">Classes</Link>
+        </div>
+      </div>
+    </>
+  )
+}
+
+/* ──────────── Carousel ──────────── */
+
+function Carousel({ events }) {
+  const [current, setCurrent] = useState(0)
+  const timerRef = useRef(null)
+
+  const startTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    timerRef.current = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % events.length)
+    }, 5000)
+  }, [events.length])
+
+  useEffect(() => {
+    if (events.length <= 1) return
+    startTimer()
+    return () => clearInterval(timerRef.current)
+  }, [events.length, startTimer])
+
+  function goTo(index) {
+    setCurrent(index)
+    startTimer()
+  }
+
+  function prev() {
+    goTo((current - 1 + events.length) % events.length)
+  }
+
+  function next() {
+    goTo((current + 1) % events.length)
+  }
+
+  if (events.length === 0) return null
+
+  return (
+    <section className="carousel-section">
+      <div className="carousel-wrapper">
+        <div className="carousel-track">
+          {events.map((event, i) => (
+            <Link
+              key={event.id}
+              to={buildEventPath(event)}
+              className={`carousel-slide ${i === current ? 'active' : ''}`}
+            >
+              <img src={event.poster_url} alt={event.title} />
+              <div className="carousel-overlay">
+                <h2>{event.title}</h2>
+                <p>{listDateFormatter.format(new Date(event.event_date))} &middot; {event.venue_name}</p>
+                {event.ticket_price != null && (
+                  <span className="carousel-price">Starts at {formatPrice(event.ticket_price)}</span>
+                )}
+              </div>
+            </Link>
+          ))}
+          {events.length > 1 && (
+            <>
+              <button className="carousel-nav prev" onClick={(e) => { e.preventDefault(); prev() }} aria-label="Previous">&#8249;</button>
+              <button className="carousel-nav next" onClick={(e) => { e.preventDefault(); next() }} aria-label="Next">&#8250;</button>
+            </>
+          )}
+        </div>
+        {events.length > 1 && (
+          <div className="carousel-dots">
+            {events.map((_, i) => (
+              <button
+                key={i}
+                className={`carousel-dot ${i === current ? 'active' : ''}`}
+                onClick={() => goTo(i)}
+                aria-label={`Go to slide ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+/* ──────────── Compact Card ──────────── */
+
+function CompactCard({ event }) {
+  return (
+    <Link className="compact-card" to={buildEventPath(event)}>
+      <img className="compact-card-image" src={event.poster_url} alt={event.title} />
+      <div className="compact-card-body">
+        <h3 className="compact-card-title">{event.title}</h3>
+        <p className="compact-card-date">{listDateFormatter.format(new Date(event.event_date))}</p>
+        {event.ticket_price != null && (
+          <p className="compact-card-price">Starts at {formatPrice(event.ticket_price)}</p>
+        )}
+      </div>
+    </Link>
+  )
+}
+
+/* ──────────── Home Page ──────────── */
+
+function HomePage() {
+  const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadEvents() {
+      try {
+        setEvents(await requestJson('/api/events'))
+      } catch {
+        // silent
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadEvents()
+  }, [])
+
+  const displayEvents = events.slice(0, 4)
+
+  return (
+    <>
+      {!loading && events.length > 0 && <Carousel events={events.slice(0, 5)} />}
+
+      {/* Events Section */}
+      <div className="section-shell section-purple">
+        <div className="section-inner">
+          <div className="section-header">
+            <h2>Events</h2>
+            <Link className="see-more-link" to="/events">See more &rarr;</Link>
+          </div>
+          {loading && <p style={{ color: 'rgba(255,255,255,0.7)' }}>Loading...</p>}
+          {!loading && displayEvents.length > 0 && (
+            <div className="compact-grid">
+              {displayEvents.map((event) => (
+                <CompactCard key={event.id} event={event} />
+              ))}
+            </div>
+          )}
+          {!loading && displayEvents.length === 0 && (
+            <p style={{ color: 'rgba(255,255,255,0.7)' }}>No events available right now.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Classes Section */}
+      <div className="section-shell section-white">
+        <div className="section-inner">
+          <div className="section-header">
+            <h2>Classes</h2>
+            <Link className="see-more-link" to="/classes">See more &rarr;</Link>
+          </div>
+          <p style={{ color: 'var(--gray-500)' }}>Classes coming soon. Stay tuned!</p>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="cta-section">
+        <h2>Want to put your event or class?</h2>
+        <p>Let&rsquo;s connect and get your event listed on {SITE_NAME}.</p>
+        <a
+          className="cta-button"
+          href="mailto:hello@ticketorbi.com"
+        >
+          Get in Touch
+        </a>
+      </div>
+
+      <footer className="footer">
+        &copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
+      </footer>
+    </>
+  )
+}
+
+/* ──────────── Events List Page ──────────── */
+
 function EventListPage() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
@@ -89,11 +314,8 @@ function EventListPage() {
   return (
     <main className="page-shell">
       <header className="page-header">
-        <p className="eyebrow">Philippine Events</p>
-        <h1>Upcoming performances and live experiences</h1>
-        <p className="intro">
-          Browse formal listings for concerts, theater productions, and classical events.
-        </p>
+        <h1>All Events</h1>
+        <p>Browse upcoming performances and live experiences.</p>
       </header>
 
       {loading && <p className="status-message">Loading events...</p>}
@@ -122,9 +344,32 @@ function EventListPage() {
           ))}
         </section>
       )}
+
+      <footer className="footer" style={{ marginTop: 48 }}>
+        &copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
+      </footer>
     </main>
   )
 }
+
+/* ──────────── Classes Page (placeholder) ──────────── */
+
+function ClassesPage() {
+  return (
+    <main className="page-shell">
+      <header className="page-header">
+        <h1>Classes</h1>
+        <p>Discover workshops, masterclasses, and learning experiences.</p>
+      </header>
+      <p className="status-message">Classes coming soon. Stay tuned!</p>
+      <footer className="footer" style={{ marginTop: 48 }}>
+        &copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
+      </footer>
+    </main>
+  )
+}
+
+/* ──────────── Event Detail Page ──────────── */
 
 function EventDetailPage() {
   const { slug } = useParams()
@@ -170,7 +415,7 @@ function EventDetailPage() {
     return (
       <main className="page-shell detail-page">
         <Link className="back-link" to="/">
-          Back to events
+          &larr; Back to events
         </Link>
         <p className="status-message">This event could not be found.</p>
       </main>
@@ -181,7 +426,7 @@ function EventDetailPage() {
     return (
       <main className="page-shell detail-page">
         <Link className="back-link" to="/">
-          Back to events
+          &larr; Back to events
         </Link>
         <p className="status-message">{error}</p>
       </main>
@@ -193,7 +438,7 @@ function EventDetailPage() {
   return (
     <main className="page-shell detail-page">
       <Link className="back-link" to="/">
-        Back to events
+        &larr; Back to events
       </Link>
 
       <section className="detail-layout">
@@ -246,6 +491,8 @@ function EventDetailPage() {
     </main>
   )
 }
+
+/* ──────────── Checkout Page ──────────── */
 
 function CheckoutPage() {
   const { slug } = useParams()
@@ -426,15 +673,18 @@ function CheckoutPage() {
 
   return (
     <main className="page-shell checkout-page">
+      <Link className="back-link" to={`/events/${slug}`}>
+        &larr; Back to event
+      </Link>
       <section className="checkout-layout">
         <div className="checkout-summary">
           <p className="eyebrow">Order Summary</p>
-          <h1>{event.title}</h1>
+          <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700 }}>{event.title}</h1>
           <p className="detail-date">{detailDateFormatter.format(new Date(event.event_date))}</p>
           <p className="event-meta">{event.venue_name}</p>
           {selectedTicketType && (
             <p className="event-meta">
-              {selectedTicketType.name} • {formatPrice(selectedTicketType.price)} per ticket
+              {selectedTicketType.name} &middot; {formatPrice(selectedTicketType.price)} per ticket
             </p>
           )}
         </div>
@@ -450,7 +700,7 @@ function CheckoutPage() {
                   value={ticketType.id}
                   disabled={ticketType.total_slots === 0}
                 >
-                  {ticketType.name} • {formatPrice(ticketType.price)} • {ticketType.total_slots} slots
+                  {ticketType.name} &middot; {formatPrice(ticketType.price)} &middot; {ticketType.total_slots} slots
                 </option>
               ))}
             </select>
@@ -515,6 +765,8 @@ function CheckoutPage() {
   )
 }
 
+/* ──────────── Order Confirmation Page ──────────── */
+
 function OrderConfirmationPage() {
   const { booking_reference: bookingReference } = useParams()
   const location = useLocation()
@@ -543,7 +795,7 @@ function OrderConfirmationPage() {
     <main className="page-shell confirmation-page">
       <section className="confirmation-card">
         <p className="eyebrow">Order Confirmed</p>
-        <h1>Order Confirmed</h1>
+        <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700 }}>Thank You!</h1>
         <p className="confirmation-reference">{confirmation.booking_reference}</p>
 
         <div className="confirmation-grid">
@@ -583,14 +835,16 @@ function OrderConfirmationPage() {
 
         <p className="confirmation-note">Your eTicket will be sent to your email shortly.</p>
         {confirmation.event.slug && (
-          <Link className="admin-link confirmation-link" to={`/events/${confirmation.event.slug}`}>
-            Back to event page
+          <Link className="confirmation-link" to={`/events/${confirmation.event.slug}`}>
+            &larr; Back to event page
           </Link>
         )}
       </section>
     </main>
   )
 }
+
+/* ──────────── Admin: Event List ──────────── */
 
 function AdminEventListPage() {
   const [events, setEvents] = useState([])
@@ -619,7 +873,7 @@ function AdminEventListPage() {
           <h1>Events</h1>
         </div>
         <Link className="admin-button" to="/admin/events/new">
-          Create Event
+          + Create Event
         </Link>
       </div>
 
@@ -666,6 +920,8 @@ function AdminEventListPage() {
     </main>
   )
 }
+
+/* ──────────── Admin: Event Form ──────────── */
 
 function AdminEventForm({
   mode,
@@ -798,6 +1054,8 @@ function AdminEventForm({
   )
 }
 
+/* ──────────── Admin: Create Event ──────────── */
+
 function toDateTimeLocalString(value) {
   if (!value) {
     return ''
@@ -889,7 +1147,7 @@ function AdminCreateEventPage() {
           <h1>Create Event</h1>
         </div>
         <Link className="admin-link" to="/admin">
-          Back to events
+          &larr; Back to events
         </Link>
       </div>
 
@@ -908,6 +1166,8 @@ function AdminCreateEventPage() {
     </main>
   )
 }
+
+/* ──────────── Admin: Ticket Types Section ──────────── */
 
 function TicketTypesSection({ eventId, ticketTypes, onReload }) {
   const [showAddForm, setShowAddForm] = useState(false)
@@ -1008,13 +1268,13 @@ function TicketTypesSection({ eventId, ticketTypes, onReload }) {
       <div className="admin-section-header">
         <h2>Ticket Types</h2>
         <button className="admin-button secondary" type="button" onClick={startAdd}>
-          Add Ticket Type
+          + Add Ticket Type
         </button>
       </div>
 
       {error && <p className="status-message form-message">{error}</p>}
 
-      <div className="admin-table-wrap">
+      <div className="admin-table-wrap" style={{ marginTop: 12 }}>
         <table className="admin-table">
           <thead>
             <tr>
@@ -1100,6 +1360,8 @@ function TicketTypesSection({ eventId, ticketTypes, onReload }) {
     </section>
   )
 }
+
+/* ──────────── Admin: Edit Event ──────────── */
 
 function AdminEditEventPage() {
   const { id } = useParams()
@@ -1227,7 +1489,7 @@ function AdminEditEventPage() {
           <h1>Edit Event</h1>
         </div>
         <Link className="admin-link" to="/admin">
-          Back to events
+          &larr; Back to events
         </Link>
       </div>
 
@@ -1249,13 +1511,26 @@ function AdminEditEventPage() {
   )
 }
 
+/* ──────────── App Router ──────────── */
+
+function PublicLayout({ children }) {
+  return (
+    <>
+      <Navbar />
+      {children}
+    </>
+  )
+}
+
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<EventListPage />} />
-      <Route path="/events/:slug" element={<EventDetailPage />} />
-      <Route path="/events/:slug/checkout" element={<CheckoutPage />} />
-      <Route path="/orders/:booking_reference/confirmation" element={<OrderConfirmationPage />} />
+      <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
+      <Route path="/events" element={<PublicLayout><EventListPage /></PublicLayout>} />
+      <Route path="/classes" element={<PublicLayout><ClassesPage /></PublicLayout>} />
+      <Route path="/events/:slug" element={<PublicLayout><EventDetailPage /></PublicLayout>} />
+      <Route path="/events/:slug/checkout" element={<PublicLayout><CheckoutPage /></PublicLayout>} />
+      <Route path="/orders/:booking_reference/confirmation" element={<PublicLayout><OrderConfirmationPage /></PublicLayout>} />
       <Route path="/admin" element={<AdminEventListPage />} />
       <Route path="/admin/events/new" element={<AdminCreateEventPage />} />
       <Route path="/admin/events/:id" element={<AdminEditEventPage />} />

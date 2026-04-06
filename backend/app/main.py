@@ -23,60 +23,186 @@ POSTERS_DIR = STATIC_DIR / "posters"
 DATABASE_URL = "postgresql://postgres:postgres@db:5432/ticketmacoi"
 BOOKING_REFERENCE_ALPHABET = string.ascii_uppercase + string.digits
 VALID_EVENT_STATUSES = {"draft", "published", "cancelled"}
+MANILA_TZ = timezone(timedelta(hours=8))
+
+
+def seed_datetime(year: int, month: int, day: int, hour: int, minute: int = 0) -> datetime:
+    return datetime(year, month, day, hour, minute, tzinfo=MANILA_TZ)
 
 SEEDED_EVENTS = [
     {
-        "title": "Manila Soundscape Live",
-        "slug": "manila-soundscape-live",
+        "title": "Kate Liu in Recital",
+        "slug": "kate-liu-in-recital",
         "description": (
-            "An evening of contemporary Filipino pop and orchestral arrangements "
-            "featuring guest vocalists and a full live band."
+            "Rising to international acclaim after winning Third Prize at the 17th "
+            "International Fryderyk Chopin Competition in Warsaw, Kate Liu also "
+            "received the Best Mazurka Prize and the Audience Favorite Prize through "
+            "the Polish National Radio. Since then, she has toured extensively, "
+            "performing at world-renowned venues including the Seoul Arts Center, "
+            "Tokyo Metropolitan Theatre, Warsaw National Philharmonic, La Maison "
+            "Symphonique de Montreal, Carnegie Hall's Weill Recital Hall, Severance "
+            "Hall, and the Kennedy Center. Kate Liu has collaborated with esteemed "
+            "orchestras such as the Warsaw Philharmonic, Orchestre Symphonique de "
+            "Montreal, Cleveland Orchestra, and Yomiuri Nippon Symphony Orchestra."
         ),
-        "event_date": datetime.now(timezone.utc) + timedelta(days=21, hours=11),
-        "venue_name": "New Frontier Theater",
-        "venue_address": "Araneta City, Quezon City, Metro Manila",
-        "poster_url": "/static/posters/manila-soundscape.jpg",
+        "event_date": seed_datetime(2026, 5, 2, 19, 0),
+        "venue_name": "Ayala Museum",
+        "venue_address": "Makati City, Metro Manila",
+        "poster_url": "https://www.veniccio.com/cdn/shop/files/Li_40.png?v=1773199640&width=1920",
         "status": "published",
-        "producer_name": "Harana Events PH",
+        "producer_name": "Veniccio",
         "ticket_types": [
-            {"name": "General Admission", "price": Decimal("1850.00"), "total_slots": 180},
-            {"name": "VIP", "price": Decimal("3200.00"), "total_slots": 60},
+            {"name": "Rear Right Section", "price": Decimal("2500.00"), "total_slots": 48},
+            {"name": "Stage Left", "price": Decimal("4500.00"), "total_slots": 24},
+            {"name": "Premium Section", "price": Decimal("6000.00"), "total_slots": 64},
+            {"name": "Patron", "price": Decimal("10000.00"), "total_slots": 16},
         ],
     },
     {
-        "title": "Tanghalang Pilipino Gala Night",
-        "slug": "tanghalang-pilipino-gala-night",
+        "title": "Michael Valenciano in Recital",
+        "slug": "michael-valenciano-in-recital",
         "description": (
-            "A formal theater showcase presenting a modern Filipino stage production "
-            "with a post-show cast talk."
+            "The Manila Chamber Orchestra Foundation continues its 2026 Young Artists "
+            "Series featuring pianist Michael Valenciano at Manila Pianos, Makati "
+            "City. The event is made possible in cooperation with Manila Pianos, "
+            "Double Pentagon Concerts, and Cultural Arts Events Organizer. Valenciano "
+            "is widely regarded as one of the country's most promising young pianists "
+            "today and is a two-time prizewinner at the National Music Competitions "
+            "for Young Artists."
         ),
-        "event_date": datetime.now(timezone.utc) + timedelta(days=35, hours=9),
+        "event_date": seed_datetime(2026, 6, 6, 19, 0),
+        "venue_name": "Manila Pianos",
+        "venue_address": "Makati City, Metro Manila",
+        "poster_url": "https://www.veniccio.com/cdn/shop/files/Li_25.png?v=1774887946&width=1920",
+        "status": "published",
+        "producer_name": "Manila Chamber Orchestra Foundation",
+        "ticket_types": [
+            {"name": "General Admission", "price": Decimal("1500.00"), "total_slots": 120},
+        ],
+    },
+    {
+        "title": "Aristo Sham in Recital",
+        "slug": "aristo-sham-in-recital",
+        "description": (
+            "Fresh from his historic triumph at the 2025 Van Cliburn International "
+            "Piano Competition, where he claimed both the Gold Medal and Audience "
+            "Award, Aristo Sham has captivated the global classical music world. "
+            "Critics have praised his clarity, elegance, technique, and risk-taking, "
+            "while major orchestras and presenters continue to feature him in "
+            "high-profile performances around the world."
+        ),
+        "event_date": seed_datetime(2026, 11, 21, 19, 0),
+        "venue_name": "Ayala Museum",
+        "venue_address": "Makati City, Metro Manila",
+        "poster_url": "https://www.veniccio.com/cdn/shop/files/Untitled_8_c3a5434a-008e-478a-b72c-cd281005676c.png?v=1770260903&width=1920",
+        "status": "published",
+        "producer_name": "Cultural Arts Events Organizer",
+        "ticket_types": [
+            {"name": "Rear Right Section", "price": Decimal("2000.00"), "total_slots": 48},
+            {"name": "Standard Section", "price": Decimal("3000.00"), "total_slots": 56},
+            {"name": "Premium Section", "price": Decimal("5000.00"), "total_slots": 40},
+            {"name": "Patron", "price": Decimal("10000.00"), "total_slots": 16},
+        ],
+    },
+    {
+        "title": "The Golden Age of Kundiman",
+        "slug": "the-golden-age-of-kundiman",
+        "description": (
+            "A full-evening vocal celebration of Filipino art song, featuring new "
+            "arrangements of beloved kundiman repertoire, guest soloists, and a "
+            "chamber ensemble devoted to the great songwriters of the early 20th "
+            "century."
+        ),
+        "event_date": seed_datetime(2026, 7, 18, 19, 30),
         "venue_name": "Samsung Performing Arts Theater",
         "venue_address": "Circuit Makati, Makati City, Metro Manila",
         "poster_url": "/static/posters/tanghalang-gala.jpg",
         "status": "published",
-        "producer_name": "Stagehouse Manila",
+        "producer_name": "Harana Arts Collective",
         "ticket_types": [
-            {"name": "Balcony", "price": Decimal("1600.00"), "total_slots": 80},
-            {"name": "Orchestra", "price": Decimal("2200.00"), "total_slots": 120},
+            {"name": "Balcony", "price": Decimal("1800.00"), "total_slots": 90},
+            {"name": "Orchestra", "price": Decimal("2800.00"), "total_slots": 120},
+            {"name": "Patron", "price": Decimal("4200.00"), "total_slots": 40},
         ],
     },
     {
-        "title": "Philippine Philharmonic Evening",
-        "slug": "philippine-philharmonic-evening",
+        "title": "Strings Under The Stars",
+        "slug": "strings-under-the-stars",
         "description": (
-            "A classical concert program of overtures, chamber works, and symphonic "
-            "pieces led by resident guest conductors."
+            "A warm outdoor-style concert featuring chamber orchestra favorites, "
+            "serenades, and crossover arrangements presented in an intimate setting "
+            "for first-time concertgoers and returning classical audiences alike."
         ),
-        "event_date": datetime.now(timezone.utc) + timedelta(days=49, hours=10),
-        "venue_name": "The Theatre at Solaire",
-        "venue_address": "Solaire Resort, Parañaque City, Metro Manila",
+        "event_date": seed_datetime(2026, 8, 8, 19, 0),
+        "venue_name": "BGC Arts Center",
+        "venue_address": "Bonifacio Global City, Taguig, Metro Manila",
         "poster_url": "/static/posters/philharmonic-evening.jpg",
         "status": "published",
         "producer_name": "Maestro Productions",
         "ticket_types": [
-            {"name": "Silver", "price": Decimal("2750.00"), "total_slots": 0},
-            {"name": "Gold", "price": Decimal("4200.00"), "total_slots": 0},
+            {"name": "Lawn Circle", "price": Decimal("1500.00"), "total_slots": 150},
+            {"name": "Preferred", "price": Decimal("2500.00"), "total_slots": 100},
+            {"name": "VIP", "price": Decimal("3800.00"), "total_slots": 50},
+        ],
+    },
+    {
+        "title": "Cinematic Scores in Concert",
+        "slug": "cinematic-scores-in-concert",
+        "description": (
+            "A symphonic night of film and television music, combining blockbuster "
+            "themes, fantasy suites, and modern screen classics with synchronized "
+            "lighting and live orchestral performance."
+        ),
+        "event_date": seed_datetime(2026, 9, 12, 20, 0),
+        "venue_name": "New Frontier Theater",
+        "venue_address": "Araneta City, Quezon City, Metro Manila",
+        "poster_url": "/static/posters/manila-soundscape.jpg",
+        "status": "published",
+        "producer_name": "Screen Music Manila",
+        "ticket_types": [
+            {"name": "Upper Box", "price": Decimal("2200.00"), "total_slots": 160},
+            {"name": "Lower Box", "price": Decimal("3200.00"), "total_slots": 100},
+            {"name": "VIP", "price": Decimal("4800.00"), "total_slots": 50},
+        ],
+    },
+    {
+        "title": "Makati Jazz Assembly",
+        "slug": "makati-jazz-assembly",
+        "description": (
+            "A curated city jazz night featuring big-band standards, modern fusion "
+            "sets, and improvisation-heavy collaborations from Manila-based players "
+            "and guest instrumentalists."
+        ),
+        "event_date": seed_datetime(2026, 10, 3, 19, 30),
+        "venue_name": "Ayala Museum",
+        "venue_address": "Makati City, Metro Manila",
+        "poster_url": "/static/posters/manila-soundscape.jpg",
+        "status": "published",
+        "producer_name": "Blue Note Makati",
+        "ticket_types": [
+            {"name": "Regular", "price": Decimal("1700.00"), "total_slots": 120},
+            {"name": "Preferred", "price": Decimal("2600.00"), "total_slots": 70},
+            {"name": "Tableside", "price": Decimal("3900.00"), "total_slots": 32},
+        ],
+    },
+    {
+        "title": "Holiday Brass and Bells",
+        "slug": "holiday-brass-and-bells",
+        "description": (
+            "A festive year-end concert with brass fanfares, seasonal choral works, "
+            "and family-friendly holiday favorites performed by a combined brass "
+            "ensemble and community chorus."
+        ),
+        "event_date": seed_datetime(2026, 12, 5, 19, 0),
+        "venue_name": "The Theatre at Solaire",
+        "venue_address": "Solaire Resort, Paranaque City, Metro Manila",
+        "poster_url": "/static/posters/philharmonic-evening.jpg",
+        "status": "published",
+        "producer_name": "Yuletide Concerts PH",
+        "ticket_types": [
+            {"name": "Silver", "price": Decimal("2000.00"), "total_slots": 110},
+            {"name": "Gold", "price": Decimal("3200.00"), "total_slots": 80},
+            {"name": "Platinum", "price": Decimal("4600.00"), "total_slots": 36},
         ],
     },
 ]
@@ -225,11 +351,14 @@ async def insert_ticket_types(
 async def seed_events(pool: asyncpg.Pool) -> None:
     async with pool.acquire() as connection:
         async with connection.transaction():
-            events_count = await connection.fetchval("SELECT COUNT(*) FROM events;")
+            for event in SEEDED_EVENTS:
+                existing_event = await connection.fetchrow(
+                    "SELECT id FROM events WHERE slug = $1;",
+                    event["slug"],
+                )
 
-            if events_count == 0:
-                for event in SEEDED_EVENTS:
-                    created_event = await connection.fetchrow(
+                if existing_event is None:
+                    existing_event = await connection.fetchrow(
                         """
                         INSERT INTO events (
                           title,
@@ -255,20 +384,21 @@ async def seed_events(pool: asyncpg.Pool) -> None:
                         event["status"],
                         event["producer_name"],
                     )
-                    await insert_ticket_types(connection, created_event["id"], event["ticket_types"])
-                return
 
-            ticket_type_count = await connection.fetchval("SELECT COUNT(*) FROM ticket_types;")
-            if ticket_type_count > 0:
-                return
-
-            for event in SEEDED_EVENTS:
-                existing_event = await connection.fetchrow(
-                    "SELECT id FROM events WHERE title = $1;",
-                    event["title"],
-                )
-                if existing_event is not None:
-                    await insert_ticket_types(connection, existing_event["id"], event["ticket_types"])
+                existing_ticket_type_names = {
+                    row["name"]
+                    for row in await connection.fetch(
+                        "SELECT name FROM ticket_types WHERE event_id = $1;",
+                        existing_event["id"],
+                    )
+                }
+                missing_ticket_types = [
+                    ticket_type
+                    for ticket_type in event["ticket_types"]
+                    if ticket_type["name"] not in existing_ticket_type_names
+                ]
+                if missing_ticket_types:
+                    await insert_ticket_types(connection, existing_event["id"], missing_ticket_types)
 
 
 async def generate_booking_reference(connection: asyncpg.Connection) -> str:

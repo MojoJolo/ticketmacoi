@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Link, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
+import ticketorbiLogo from './assets/ticketorbi-logo.svg'
 
 const SITE_NAME = 'Ticketorbi'
 
@@ -83,7 +84,7 @@ function Navbar() {
     <>
       <nav className="navbar">
         <div className="navbar-inner">
-          <Link className="navbar-logo" to="/">{SITE_NAME}</Link>
+          <Link className="navbar-logo" to="/"><img src={ticketorbiLogo} alt={SITE_NAME} /></Link>
           <div className="navbar-links">
             <Link to="/" className={location.pathname === '/' ? 'active' : ''}>Home</Link>
             <Link to="/events" className={location.pathname === '/events' ? 'active' : ''}>Events</Link>
@@ -116,6 +117,32 @@ function Navbar() {
         </div>
       </div>
     </>
+  )
+}
+
+/* ──────────── Footer ──────────── */
+
+function Footer() {
+  return (
+    <footer className="footer">
+      <div className="footer-inner">
+        <p className="footer-copy">&copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.</p>
+        <div className="footer-social">
+          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+            </svg>
+          </a>
+          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+              <circle cx="12" cy="12" r="4"/>
+              <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </footer>
   )
 }
 
@@ -157,11 +184,15 @@ function Carousel({ events }) {
     <section className="carousel-section">
       <div className="carousel-wrapper">
         <div className="carousel-track">
-          {events.map((event, i) => (
+          {events.map((event, i) => {
+            const prevIdx = (current - 1 + events.length) % events.length
+            const nextIdx = (current + 1) % events.length
+            const slideClass = i === current ? 'active' : i === prevIdx ? 'prev' : i === nextIdx ? 'next' : ''
+            return (
             <Link
               key={event.id}
               to={buildEventPath(event)}
-              className={`carousel-slide ${i === current ? 'active' : ''}`}
+              className={`carousel-slide ${slideClass}`}
             >
               <img src={event.poster_url} alt={event.title} />
               <div className="carousel-overlay">
@@ -172,7 +203,8 @@ function Carousel({ events }) {
                 )}
               </div>
             </Link>
-          ))}
+            )
+          })}
           {events.length > 1 && (
             <>
               <button className="carousel-nav prev" onClick={(e) => { e.preventDefault(); prev() }} aria-label="Previous">&#8249;</button>
@@ -283,9 +315,7 @@ function HomePage() {
         </a>
       </div>
 
-      <footer className="footer">
-        &copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
-      </footer>
+      <Footer />
     </>
   )
 }
@@ -345,9 +375,7 @@ function EventListPage() {
         </section>
       )}
 
-      <footer className="footer" style={{ marginTop: 48 }}>
-        &copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
-      </footer>
+      <Footer />
     </main>
   )
 }
@@ -362,9 +390,7 @@ function ClassesPage() {
         <p>Discover workshops, masterclasses, and learning experiences.</p>
       </header>
       <p className="status-message">Classes coming soon. Stay tuned!</p>
-      <footer className="footer" style={{ marginTop: 48 }}>
-        &copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
-      </footer>
+      <Footer />
     </main>
   )
 }

@@ -62,8 +62,8 @@ img {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--white);
-  border-bottom: 1px solid var(--gray-200);
+  background: #000000;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .navbar-inner {
@@ -77,10 +77,14 @@ img {
 }
 
 .navbar-logo {
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--accent);
-  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+}
+
+.navbar-logo img {
+  height: 24px;
+  width: auto;
+  display: block;
 }
 
 .navbar-links {
@@ -92,13 +96,13 @@ img {
 .navbar-links a {
   font-size: 0.9rem;
   font-weight: 500;
-  color: var(--gray-700);
+  color: rgba(255, 255, 255, 0.8);
   transition: color 0.15s;
 }
 
 .navbar-links a:hover,
 .navbar-links a.active {
-  color: var(--accent);
+  color: var(--white);
 }
 
 .navbar-hamburger {
@@ -107,6 +111,7 @@ img {
   border: none;
   cursor: pointer;
   padding: 4px;
+  color: var(--white);
 }
 
 .navbar-hamburger svg {
@@ -125,25 +130,41 @@ img {
   max-width: 1200px;
   margin: 0 auto;
   padding: 24px 20px;
+  overflow: hidden;
 }
 
 .carousel-track {
   position: relative;
-  width: 100%;
+  width: 76%;
+  margin: 0 auto;
   aspect-ratio: 2.5 / 1;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
 }
 
 .carousel-slide {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transition: opacity 0.5s ease;
+  pointer-events: none;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
 .carousel-slide.active {
   opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+  z-index: 1;
+}
+
+.carousel-slide.prev {
+  opacity: 0.55;
+  transform: translateX(-102%);
+}
+
+.carousel-slide.next {
+  opacity: 0.55;
+  transform: translateX(102%);
 }
 
 .carousel-slide img {
@@ -411,12 +432,39 @@ img {
 /* ──────────── Footer ──────────── */
 
 .footer {
-  background: var(--gray-50);
-  border-top: 1px solid var(--gray-200);
-  padding: 32px 20px;
-  text-align: center;
-  color: var(--gray-500);
+  background: #000000;
+  padding: 28px 20px;
+  margin-top: 48px;
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footer-copy {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.55);
   font-size: 0.82rem;
+}
+
+.footer-social {
+  display: flex;
+  gap: 16px;
+}
+
+.footer-social a {
+  color: rgba(255, 255, 255, 0.65);
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.footer-social a:hover {
+  color: #ffffff;
 }
 
 /* ──────────── Events Page (full list) ──────────── */
@@ -1037,7 +1085,14 @@ img {
   }
 
   .carousel-track {
+    width: 100%;
     aspect-ratio: 16 / 9;
+  }
+
+  .carousel-slide.prev,
+  .carousel-slide.next {
+    opacity: 0;
+    transform: translateX(0);
   }
 
   .carousel-overlay {

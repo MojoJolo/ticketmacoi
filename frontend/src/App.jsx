@@ -1,5 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Link, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
+import ReactMarkdown from 'react-markdown'
+import remarkBreaks from 'remark-breaks'
+import rehypeRaw from 'rehype-raw'
 import ticketorbiLogo from './assets/ticketorbi-logo.svg'
 
 const SITE_NAME = 'Ticketorbi'
@@ -68,6 +71,23 @@ async function fetchAdminEvent(id) {
 
 function getTotalSlots(ticketTypes) {
   return ticketTypes.reduce((sum, ticketType) => sum + (ticketType.total_slots || 0), 0)
+}
+
+/* ──────────── Markdown ──────────── */
+
+function MarkdownContent({ children }) {
+  if (!children) return null
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkBreaks]}
+      rehypePlugins={[rehypeRaw]}
+      components={{
+        p: ({ node, ...props }) => <p style={{ margin: '0 0 0.75em' }} {...props} />,
+      }}
+    >
+      {children}
+    </ReactMarkdown>
+  )
 }
 
 /* ──────────── Navbar ──────────── */
@@ -489,7 +509,7 @@ function EventDetailPage() {
 
           <div className="detail-block">
             <h2>Description</h2>
-            <p>{event.description}</p>
+            <MarkdownContent>{event.description}</MarkdownContent>
           </div>
 
           <div className="detail-block">
@@ -955,6 +975,56 @@ function AdminEventListPage() {
   )
 }
 
+/* ──────────── Admin: Markdown Editor ──────────── */
+
+function MarkdownEditor({ value, onChange, rows = 6 }) {
+  const textareaRef = useRef(null)
+
+  function wrapSelection(before, after) {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const selected = value.slice(start, end)
+    const inner = selected || 'text'
+    const newValue = value.slice(0, start) + before + inner + after + value.slice(end)
+
+    onChange(newValue)
+
+    requestAnimationFrame(() => {
+      textarea.focus()
+      textarea.setSelectionRange(
+        start + before.length,
+        start + before.length + inner.length,
+      )
+    })
+  }
+
+  return (
+    <div className="markdown-editor">
+      <div className="markdown-toolbar">
+        <button type="button" className="markdown-tool" title="Bold" onClick={() => wrapSelection('**', '**')}>
+          <strong>B</strong>
+        </button>
+        <button type="button" className="markdown-tool" title="Italic" onClick={() => wrapSelection('_', '_')}>
+          <em>I</em>
+        </button>
+        <button type="button" className="markdown-tool" title="Underline" onClick={() => wrapSelection('<u>', '</u>')}>
+          <u>U</u>
+        </button>
+      </div>
+      <textarea
+        ref={textareaRef}
+        className="markdown-textarea"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={rows}
+      />
+    </div>
+  )
+}
+
 /* ──────────── Admin: Event Form ──────────── */
 
 function AdminImageUploadField({ label, ratio, preview, currentUrl, onChange, altText }) {
@@ -1004,17 +1074,13 @@ function AdminEventForm({
         />
       </label>
 
-      <label className="form-field">
+      <div className="form-field">
         <span>Description</span>
-        <textarea
-          name="description"
+        <MarkdownEditor
           value={formValues.description}
-          onChange={(eventTarget) =>
-            setFormValues((currentValues) => ({ ...currentValues, description: eventTarget.target.value }))
-          }
-          rows="5"
+          onChange={(val) => setFormValues((currentValues) => ({ ...currentValues, description: val }))}
         />
-      </label>
+      </div>
 
       <label className="form-field">
         <span>Event Date + Time</span>

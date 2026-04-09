@@ -1039,6 +1039,54 @@ img {
   aspect-ratio: 2 / 2.6;
 }
 
+.markdown-editor {
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.markdown-toolbar {
+  display: flex;
+  gap: 2px;
+  padding: 6px 8px;
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.markdown-tool {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--gray-700);
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.markdown-tool:hover {
+  background: var(--gray-100);
+  border-color: var(--gray-400);
+}
+
+.markdown-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--gray-900);
+  background: var(--white);
+  box-sizing: border-box;
+}
+
 .inline-ticket-form {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) auto auto;

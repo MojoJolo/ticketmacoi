@@ -137,7 +137,7 @@ img {
   position: relative;
   width: 76%;
   margin: 0 auto;
-  aspect-ratio: 2.5 / 1;
+  aspect-ratio: 16 / 9;
 }
 
 .carousel-slide {
@@ -176,7 +176,7 @@ img {
 .carousel-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, rgba(50, 11, 55, 0.75) 0%, rgba(50, 11, 55, 0.2) 60%, transparent 100%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.35) 45%, transparent 100%);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -317,7 +317,7 @@ img {
 
 .compact-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
 
@@ -346,7 +346,7 @@ img {
 
 .compact-card-image {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 2.6 / 2;
   object-fit: cover;
 }
 
@@ -354,11 +354,20 @@ img {
   padding: 12px 14px 14px;
 }
 
+.compact-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+}
+
 .compact-card-title {
   margin: 0;
   font-size: 0.88rem;
   font-weight: 600;
   line-height: 1.3;
+  flex: 1;
+  min-width: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -380,14 +389,36 @@ img {
 }
 
 .compact-card-price {
-  margin: 6px 0 0;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .section-purple .compact-card-price {
   color: rgba(255, 255, 255, 0.9);
+}
+
+.see-more-wrap {
+  margin-top: 28px;
+  text-align: center;
+}
+
+.see-more-btn {
+  display: inline-block;
+  padding: 10px 36px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--white);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.see-more-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.9);
 }
 
 /* ──────────── CTA Banner ──────────── */
@@ -1086,7 +1117,6 @@ img {
 
   .carousel-track {
     width: 100%;
-    aspect-ratio: 16 / 9;
   }
 
   .carousel-slide.prev,
@@ -1106,6 +1136,10 @@ img {
   .compact-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
+  }
+
+  .compact-grid .compact-card:nth-child(n+5) {
+    display: none;
   }
 
   .compact-card-body {
@@ -1176,7 +1210,4 @@ img {
     font-size: 0.78rem;
   }
 
-  .carousel-track {
-    aspect-ratio: 16 / 10;
-  }
 }

@@ -236,11 +236,13 @@ function CompactCard({ event }) {
     <Link className="compact-card" to={buildEventPath(event)}>
       <img className="compact-card-image" src={event.poster_url} alt={event.title} />
       <div className="compact-card-body">
-        <h3 className="compact-card-title">{event.title}</h3>
+        <div className="compact-card-meta">
+          <h3 className="compact-card-title">{event.title}</h3>
+          {event.ticket_price != null && (
+            <span className="compact-card-price">Starts at {formatPrice(event.ticket_price)}</span>
+          )}
+        </div>
         <p className="compact-card-date">{listDateFormatter.format(new Date(event.event_date))}</p>
-        {event.ticket_price != null && (
-          <p className="compact-card-price">Starts at {formatPrice(event.ticket_price)}</p>
-        )}
       </div>
     </Link>
   )
@@ -265,7 +267,7 @@ function HomePage() {
     loadEvents()
   }, [])
 
-  const displayEvents = events.slice(0, 4)
+  const displayEvents = events.slice(0, 8)
 
   return (
     <>
@@ -276,15 +278,19 @@ function HomePage() {
         <div className="section-inner">
           <div className="section-header">
             <h2>Events</h2>
-            <Link className="see-more-link" to="/events">See more &rarr;</Link>
           </div>
           {loading && <p style={{ color: 'rgba(255,255,255,0.7)' }}>Loading...</p>}
           {!loading && displayEvents.length > 0 && (
-            <div className="compact-grid">
-              {displayEvents.map((event) => (
-                <CompactCard key={event.id} event={event} />
-              ))}
-            </div>
+            <>
+              <div className="compact-grid">
+                {displayEvents.map((event) => (
+                  <CompactCard key={event.id} event={event} />
+                ))}
+              </div>
+              <div className="see-more-wrap">
+                <Link className="see-more-btn" to="/events">See More Events</Link>
+              </div>
+            </>
           )}
           {!loading && displayEvents.length === 0 && (
             <p style={{ color: 'rgba(255,255,255,0.7)' }}>No events available right now.</p>

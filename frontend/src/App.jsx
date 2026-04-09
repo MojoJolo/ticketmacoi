@@ -194,7 +194,7 @@ function Carousel({ events }) {
               to={buildEventPath(event)}
               className={`carousel-slide ${slideClass}`}
             >
-              <img src={event.poster_url} alt={event.title} />
+              <img src={event.carousel_image_url || event.poster_url} alt={event.title} />
               <div className="carousel-overlay">
                 <h2>{event.title}</h2>
                 <p>{listDateFormatter.format(new Date(event.event_date))} &middot; {event.venue_name}</p>
@@ -234,7 +234,7 @@ function Carousel({ events }) {
 function CompactCard({ event }) {
   return (
     <Link className="compact-card" to={buildEventPath(event)}>
-      <img className="compact-card-image" src={event.poster_url} alt={event.title} />
+      <img className="compact-card-image" src={event.card_image_url || event.poster_url} alt={event.title} />
       <div className="compact-card-body">
         <div className="compact-card-meta">
           <h3 className="compact-card-title">{event.title}</h3>
@@ -364,7 +364,7 @@ function EventListPage() {
         <section className="event-grid">
           {events.map((event) => (
             <Link className="event-card" key={event.id} to={buildEventPath(event)}>
-              <img className="event-card-image" src={event.poster_url} alt={event.title} />
+              <img className="event-card-image" src={event.card_image_url || event.poster_url} alt={event.title} />
               <div className="event-card-content">
                 <div className="event-card-head">
                   <h2>{event.title}</h2>
@@ -901,7 +901,8 @@ function AdminEventListPage() {
     <main className="page-shell admin-page">
       <div className="admin-header">
         <div>
-          <p className="eyebrow">Admin</p>
+          <Link className="admin-link" to="/">&larr; Homepage</Link>
+          <p className="eyebrow" style={{ marginTop: 8 }}>Admin</p>
           <h1>Events</h1>
         </div>
         <Link className="admin-button" to="/admin/events/new">
@@ -928,7 +929,11 @@ function AdminEventListPage() {
             <tbody>
               {events.map((event) => (
                 <tr key={event.id}>
-                  <td>{event.title}</td>
+                  <td>
+                    <Link className="admin-link" to={buildEventPath(event)} target="_blank" rel="noopener noreferrer">
+                      {event.title}
+                    </Link>
+                  </td>
                   <td>{detailDateFormatter.format(new Date(event.event_date))}</td>
                   <td>{event.venue_name}</td>
                   <td>
@@ -938,9 +943,6 @@ function AdminEventListPage() {
                   <td className="admin-actions-cell">
                     <Link className="admin-link" to={`/admin/events/${event.id}`}>
                       Edit
-                    </Link>
-                    <Link className="admin-link" to={`/admin/events/${event.id}`}>
-                      View ticket types
                     </Link>
                   </td>
                 </tr>
@@ -955,6 +957,22 @@ function AdminEventListPage() {
 
 /* ──────────── Admin: Event Form ──────────── */
 
+function AdminImageUploadField({ label, ratio, preview, currentUrl, onChange, altText }) {
+  return (
+    <div className="admin-image-upload-field">
+      <label className="form-field">
+        <span>{label} <small className="admin-image-ratio-hint">({ratio})</small></span>
+        <input type="file" accept="image/*" onChange={onChange} />
+      </label>
+      {(preview || currentUrl) && (
+        <div className="admin-poster-preview admin-image-preview" data-ratio={ratio}>
+          <img src={preview || currentUrl} alt={altText || label} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 function AdminEventForm({
   mode,
   event,
@@ -964,6 +982,10 @@ function AdminEventForm({
   submitting,
   error,
   successMessage,
+  carouselPreview,
+  onCarouselSelect,
+  cardPreview,
+  onCardSelect,
   posterPreview,
   onPosterSelect,
 }) {
@@ -1059,16 +1081,32 @@ function AdminEventForm({
         </select>
       </label>
 
-      <label className="form-field">
-        <span>Poster Upload</span>
-        <input type="file" accept="image/*" onChange={onPosterSelect} />
-      </label>
-
-      {(posterPreview || event?.poster_url) && (
-        <div className="admin-poster-preview">
-          <img src={posterPreview || event?.poster_url} alt={formValues.title || 'Poster preview'} />
-        </div>
-      )}
+      <div className="admin-image-uploads">
+        <AdminImageUploadField
+          label="Carousel Image"
+          ratio="2:5"
+          preview={carouselPreview}
+          currentUrl={event?.carousel_image_url}
+          onChange={onCarouselSelect}
+          altText={formValues.title || 'Carousel image'}
+        />
+        <AdminImageUploadField
+          label="Event Card Image"
+          ratio="2:2.6"
+          preview={cardPreview}
+          currentUrl={event?.card_image_url}
+          onChange={onCardSelect}
+          altText={formValues.title || 'Event card image'}
+        />
+        <AdminImageUploadField
+          label="Official Poster"
+          ratio="2:5"
+          preview={posterPreview}
+          currentUrl={event?.poster_url}
+          onChange={onPosterSelect}
+          altText={formValues.title || 'Official poster'}
+        />
+      </div>
 
       {error && <p className="status-message form-message">{error}</p>}
       {successMessage && <p className="success-banner form-success">{successMessage}</p>}
@@ -1102,11 +1140,11 @@ function toDateTimeLocalString(value) {
   return `${year}-${month}-${day}T${hours}:${minutes}`
 }
 
-async function uploadPoster(eventId, file) {
+async function uploadImage(eventId, file, imageType) {
   const formData = new FormData()
   formData.append('file', file)
 
-  return requestJson(`/api/admin/events/${eventId}/upload-poster`, {
+  return requestJson(`/api/admin/events/${eventId}/upload-image?image_type=${imageType}`, {
     method: 'POST',
     body: formData,
   })
@@ -1125,15 +1163,30 @@ function AdminCreateEventPage() {
   })
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [carouselPreview, setCarouselPreview] = useState('')
+  const [pendingCarouselFile, setPendingCarouselFile] = useState(null)
+  const [cardPreview, setCardPreview] = useState('')
+  const [pendingCardFile, setPendingCardFile] = useState(null)
   const [posterPreview, setPosterPreview] = useState('')
   const [pendingPosterFile, setPendingPosterFile] = useState(null)
 
+  function handleCarouselSelect(changeEvent) {
+    const file = changeEvent.target.files?.[0]
+    if (!file) return
+    setCarouselPreview(URL.createObjectURL(file))
+    setPendingCarouselFile(file)
+  }
+
+  function handleCardSelect(changeEvent) {
+    const file = changeEvent.target.files?.[0]
+    if (!file) return
+    setCardPreview(URL.createObjectURL(file))
+    setPendingCardFile(file)
+  }
+
   function handlePosterSelect(changeEvent) {
     const file = changeEvent.target.files?.[0]
-    if (!file) {
-      return
-    }
-
+    if (!file) return
     setPosterPreview(URL.createObjectURL(file))
     setPendingPosterFile(file)
   }
@@ -1155,9 +1208,11 @@ function AdminCreateEventPage() {
         }),
       })
 
-      if (pendingPosterFile) {
-        await uploadPoster(createdEvent.id, pendingPosterFile)
-      }
+      await Promise.all([
+        pendingCarouselFile ? uploadImage(createdEvent.id, pendingCarouselFile, 'carousel') : null,
+        pendingCardFile ? uploadImage(createdEvent.id, pendingCardFile, 'card') : null,
+        pendingPosterFile ? uploadImage(createdEvent.id, pendingPosterFile, 'poster') : null,
+      ])
 
       navigate(`/admin/events/${createdEvent.id}`, {
         state: {
@@ -1192,6 +1247,10 @@ function AdminCreateEventPage() {
         submitting={submitting}
         error={error}
         successMessage=""
+        carouselPreview={carouselPreview}
+        onCarouselSelect={handleCarouselSelect}
+        cardPreview={cardPreview}
+        onCardSelect={handleCardSelect}
         posterPreview={posterPreview}
         onPosterSelect={handlePosterSelect}
       />
@@ -1412,6 +1471,8 @@ function AdminEditEventPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState(location.state?.successMessage || '')
+  const [carouselPreview, setCarouselPreview] = useState('')
+  const [cardPreview, setCardPreview] = useState('')
   const [posterPreview, setPosterPreview] = useState('')
 
   async function loadEvent() {
@@ -1444,26 +1505,33 @@ function AdminEditEventPage() {
     loadEvent()
   }, [id])
 
-  async function handlePosterSelect(changeEvent) {
+  async function handleImageSelect(changeEvent, imageType, setPreview, urlKey) {
     const file = changeEvent.target.files?.[0]
-    if (!file || !id) {
-      return
-    }
+    if (!file || !id) return
 
-    setPosterPreview(URL.createObjectURL(file))
+    setPreview(URL.createObjectURL(file))
 
     try {
-      const payload = await uploadPoster(id, file)
-      setEvent((currentEvent) => ({
-        ...currentEvent,
-        poster_url: payload.poster_url,
-      }))
-      setSuccessMessage('Poster uploaded successfully.')
+      const payload = await uploadImage(id, file, imageType)
+      setEvent((currentEvent) => ({ ...currentEvent, [urlKey]: payload[urlKey] }))
+      setSuccessMessage('Image uploaded successfully.')
       setError('')
     } catch (uploadError) {
       setError(uploadError.message)
       setSuccessMessage('')
     }
+  }
+
+  function handleCarouselSelect(changeEvent) {
+    handleImageSelect(changeEvent, 'carousel', setCarouselPreview, 'carousel_image_url')
+  }
+
+  function handleCardSelect(changeEvent) {
+    handleImageSelect(changeEvent, 'card', setCardPreview, 'card_image_url')
+  }
+
+  function handlePosterSelect(changeEvent) {
+    handleImageSelect(changeEvent, 'poster', setPosterPreview, 'poster_url')
   }
 
   async function handleSubmit(submitEvent) {
@@ -1534,6 +1602,10 @@ function AdminEditEventPage() {
         submitting={submitting}
         error={error}
         successMessage={successMessage}
+        carouselPreview={carouselPreview}
+        onCarouselSelect={handleCarouselSelect}
+        cardPreview={cardPreview}
+        onCardSelect={handleCardSelect}
         posterPreview={posterPreview}
         onPosterSelect={handlePosterSelect}
       />

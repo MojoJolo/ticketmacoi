@@ -11,7 +11,7 @@ from typing import Annotated
 from uuid import UUID, uuid4
 
 import asyncpg
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field, StringConstraints
 
@@ -216,6 +216,8 @@ class EventCreateRequest(BaseModel):
     venue_address: str | None = None
     producer_name: str | None = None
     poster_url: str | None = None
+    carousel_image_url: str | None = None
+    card_image_url: str | None = None
     status: str = "draft"
 
 
@@ -227,6 +229,8 @@ class EventUpdateRequest(BaseModel):
     venue_address: str | None = None
     producer_name: str | None = None
     poster_url: str | None = None
+    carousel_image_url: str | None = None
+    card_image_url: str | None = None
     status: str | None = None
 
 
@@ -451,6 +455,8 @@ async def fetch_event_with_ticket_types(connection: asyncpg.Connection, event_id
           venue_name,
           venue_address,
           poster_url,
+          carousel_image_url,
+          card_image_url,
           status,
           producer_name,
           created_at
@@ -499,6 +505,8 @@ async def list_events(request: Request):
               e.venue_name,
               e.venue_address,
               e.poster_url,
+              e.carousel_image_url,
+              e.card_image_url,
               e.status,
               e.producer_name,
               e.created_at,
@@ -530,6 +538,8 @@ async def get_event(event_slug: str, request: Request):
               venue_name,
               venue_address,
               poster_url,
+              carousel_image_url,
+              card_image_url,
               status,
               producer_name,
               created_at
@@ -677,6 +687,8 @@ async def admin_list_events(request: Request):
               e.venue_name,
               e.venue_address,
               e.poster_url,
+              e.carousel_image_url,
+              e.card_image_url,
               e.status,
               e.producer_name,
               e.created_at,
@@ -709,10 +721,12 @@ async def admin_create_event(payload: EventCreateRequest, request: Request):
               venue_name,
               venue_address,
               poster_url,
+              carousel_image_url,
+              card_image_url,
               status,
               producer_name
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING
               id,
               title,
@@ -722,6 +736,8 @@ async def admin_create_event(payload: EventCreateRequest, request: Request):
               venue_name,
               venue_address,
               poster_url,
+              carousel_image_url,
+              card_image_url,
               status,
               producer_name,
               created_at;
@@ -733,6 +749,8 @@ async def admin_create_event(payload: EventCreateRequest, request: Request):
             venue_name,
             payload.venue_address,
             payload.poster_url,
+            payload.carousel_image_url,
+            payload.card_image_url,
             payload.status,
             payload.producer_name,
         )
@@ -787,8 +805,10 @@ async def admin_update_event(event_id: UUID, payload: EventUpdateRequest, reques
               venue_name = COALESCE($6, venue_name),
               venue_address = COALESCE($7, venue_address),
               poster_url = COALESCE($8, poster_url),
-              status = COALESCE($9, status),
-              producer_name = COALESCE($10, producer_name)
+              carousel_image_url = COALESCE($9, carousel_image_url),
+              card_image_url = COALESCE($10, card_image_url),
+              status = COALESCE($11, status),
+              producer_name = COALESCE($12, producer_name)
             WHERE id = $1
             RETURNING
               id,
@@ -799,6 +819,8 @@ async def admin_update_event(event_id: UUID, payload: EventUpdateRequest, reques
               venue_name,
               venue_address,
               poster_url,
+              carousel_image_url,
+              card_image_url,
               status,
               producer_name,
               created_at;
@@ -811,6 +833,8 @@ async def admin_update_event(event_id: UUID, payload: EventUpdateRequest, reques
             venue_name,
             payload.venue_address,
             payload.poster_url,
+            payload.carousel_image_url,
+            payload.card_image_url,
             payload.status,
             payload.producer_name,
         )
@@ -912,3 +936,59 @@ async def admin_upload_poster(event_id: UUID, request: Request, file: UploadFile
         )
 
     return {"poster_url": poster_url}
+
+
+VALID_IMAGE_TYPES = {"carousel", "card", "poster"}
+
+
+@app.post("/api/admin/events/{event_id}/upload-image")
+async def admin_upload_image(
+    event_id: UUID,
+    request: Request,
+    image_type: str = Query(...),
+    file: UploadFile = File(...),
+):
+    if image_type not in VALID_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=422,
+            detail="Invalid image_type. Must be 'carousel', 'card', or 'poster'.",
+        )
+
+    async with request.app.state.pool.acquire() as connection:
+        event = await connection.fetchrow(
+            "SELECT id, slug FROM events WHERE id = $1;",
+            event_id,
+        )
+        if event is None:
+            raise HTTPException(status_code=404, detail="Event not found.")
+
+        extension = Path(file.filename or "").suffix.lower() or ".jpg"
+        filename = f"{event['slug']}-{image_type}-{uuid4().hex}{extension}"
+        target_path = POSTERS_DIR / filename
+
+        with target_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        image_url = f"/static/posters/{filename}"
+
+        if image_type == "carousel":
+            await connection.execute(
+                "UPDATE events SET carousel_image_url = $2 WHERE id = $1;",
+                event_id,
+                image_url,
+            )
+            return {"carousel_image_url": image_url}
+        elif image_type == "card":
+            await connection.execute(
+                "UPDATE events SET card_image_url = $2 WHERE id = $1;",
+                event_id,
+                image_url,
+            )
+            return {"card_image_url": image_url}
+        else:
+            await connection.execute(
+                "UPDATE events SET poster_url = $2 WHERE id = $1;",
+                event_id,
+                image_url,
+            )
+            return {"poster_url": image_url}

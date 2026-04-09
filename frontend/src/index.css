@@ -1014,6 +1014,31 @@ img {
   object-fit: cover;
 }
 
+.admin-image-uploads {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.admin-image-upload-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-image-ratio-hint {
+  font-weight: 400;
+  color: var(--gray-500);
+}
+
+.admin-image-preview[data-ratio="2:5"] img {
+  aspect-ratio: 2 / 5;
+}
+
+.admin-image-preview[data-ratio="2:2.6"] img {
+  aspect-ratio: 2 / 2.6;
+}
+
 .inline-ticket-form {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) auto auto;

@@ -1,0 +1,5 @@
+ALTER TABLE events
+ADD COLUMN IF NOT EXISTS carousel_image_url TEXT;
+
+ALTER TABLE events
+ADD COLUMN IF NOT EXISTS card_image_url TEXT;

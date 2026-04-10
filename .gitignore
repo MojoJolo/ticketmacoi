@@ -9,6 +9,9 @@ backend/**/*.pyc
 backend/.pytest_cache/
 backend/.mypy_cache/
 
+# Uploaded static files
+backend/static/posters/
+
 # Frontend build output
 frontend/dist/
 .vite/

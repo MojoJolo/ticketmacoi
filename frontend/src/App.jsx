@@ -917,6 +917,19 @@ function AdminEventListPage() {
     loadEvents()
   }, [])
 
+  async function handleDelete(event) {
+    if (!window.confirm(`Delete "${event.title}"?\n\nThis action cannot be easily undone.`)) {
+      return
+    }
+
+    try {
+      await requestJson(`/api/admin/events/${event.id}`, { method: 'DELETE' })
+      setEvents((current) => current.filter((e) => e.id !== event.id))
+    } catch (deleteError) {
+      setError(deleteError.message)
+    }
+  }
+
   return (
     <main className="page-shell admin-page">
       <div className="admin-header">
@@ -964,6 +977,9 @@ function AdminEventListPage() {
                     <Link className="admin-link" to={`/admin/events/${event.id}`}>
                       Edit
                     </Link>
+                    <button className="admin-link admin-delete-btn" onClick={() => handleDelete(event)}>
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -1523,6 +1539,7 @@ function TicketTypesSection({ eventId, ticketTypes, onReload }) {
 function AdminEditEventPage() {
   const { id } = useParams()
   const location = useLocation()
+  const navigate = useNavigate()
   const [event, setEvent] = useState(null)
   const [formValues, setFormValues] = useState({
     title: '',
@@ -1600,6 +1617,19 @@ function AdminEditEventPage() {
     handleImageSelect(changeEvent, 'poster', setPosterPreview, 'poster_url')
   }
 
+  async function handleDelete() {
+    if (!window.confirm(`Delete "${event?.title}"?\n\nThis action cannot be easily undone.`)) {
+      return
+    }
+
+    try {
+      await requestJson(`/api/admin/events/${id}`, { method: 'DELETE' })
+      navigate('/admin')
+    } catch (deleteError) {
+      setError(deleteError.message)
+    }
+  }
+
   async function handleSubmit(submitEvent) {
     submitEvent.preventDefault()
     if (!id) {
@@ -1654,9 +1684,14 @@ function AdminEditEventPage() {
           <p className="eyebrow">Admin</p>
           <h1>Edit Event</h1>
         </div>
-        <Link className="admin-link" to="/admin">
-          &larr; Back to events
-        </Link>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button className="admin-delete-btn" onClick={handleDelete}>
+            Delete Event
+          </button>
+          <Link className="admin-link" to="/admin">
+            &larr; Back to events
+          </Link>
+        </div>
       </div>
 
       <AdminEventForm

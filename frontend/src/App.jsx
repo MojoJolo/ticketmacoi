@@ -1684,14 +1684,9 @@ function AdminEditEventPage() {
           <p className="eyebrow">Admin</p>
           <h1>Edit Event</h1>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button className="admin-delete-btn" onClick={handleDelete}>
-            Delete Event
-          </button>
-          <Link className="admin-link" to="/admin">
-            &larr; Back to events
-          </Link>
-        </div>
+        <Link className="admin-link" to="/admin">
+          &larr; Back to events
+        </Link>
       </div>
 
       <AdminEventForm
@@ -1712,6 +1707,14 @@ function AdminEditEventPage() {
       />
 
       <TicketTypesSection eventId={id} ticketTypes={event.ticket_types || []} onReload={loadEvent} />
+
+      <div className="admin-danger-zone">
+        <h3>Danger Zone</h3>
+        <p>Deleting this event is a soft delete — it won't be visible anywhere but can be recovered from the database.</p>
+        <button className="admin-delete-btn admin-delete-btn--prominent" onClick={handleDelete}>
+          Delete Event
+        </button>
+      </div>
     </main>
   )
 }

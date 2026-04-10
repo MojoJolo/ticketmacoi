@@ -1,10 +1,8 @@
 import asyncio
-import logging
 import re
 import secrets
 import shutil
 import string
-import traceback
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -958,9 +956,6 @@ async def admin_upload_poster(event_id: UUID, request: Request, file: UploadFile
 
 VALID_IMAGE_TYPES = {"carousel", "card", "poster"}
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-
 
 @app.post("/api/admin/events/{event_id}/upload-image")
 async def admin_upload_image(
@@ -969,78 +964,47 @@ async def admin_upload_image(
     image_type: str = Query(...),
     file: UploadFile = File(...),
 ):
-    logger.info("=== upload-image called: event_id=%s image_type=%s filename=%s ===", event_id, image_type, file.filename)
-
     if image_type not in VALID_IMAGE_TYPES:
-        logger.error("Invalid image_type: %s", image_type)
         raise HTTPException(
             status_code=422,
             detail="Invalid image_type. Must be 'carousel', 'card', or 'poster'.",
         )
 
-    try:
-        async with request.app.state.pool.acquire() as connection:
-            event = await connection.fetchrow(
-                "SELECT id, slug FROM events WHERE id = $1;",
+    async with request.app.state.pool.acquire() as connection:
+        event = await connection.fetchrow(
+            "SELECT id, slug FROM events WHERE id = $1;",
+            event_id,
+        )
+        if event is None:
+            raise HTTPException(status_code=404, detail="Event not found.")
+
+        extension = Path(file.filename or "").suffix.lower() or ".jpg"
+        filename = f"{event['slug']}-{image_type}-{uuid4().hex}{extension}"
+        target_path = POSTERS_DIR / filename
+
+        with target_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        image_url = f"/static/posters/{filename}"
+
+        if image_type == "carousel":
+            await connection.execute(
+                "UPDATE events SET carousel_image_url = $2 WHERE id = $1;",
                 event_id,
+                image_url,
             )
-            if event is None:
-                logger.error("Event not found: id=%s", event_id)
-                raise HTTPException(status_code=404, detail="Event not found.")
-
-            logger.info("Event found: id=%s slug=%s", event["id"], event["slug"])
-
-            url_column = {"carousel": "carousel_image_url", "card": "card_image_url", "poster": "poster_url"}[image_type]
-            before_row = await connection.fetchrow(f"SELECT {url_column} FROM events WHERE id = $1;", event_id)
-            logger.info("BEFORE %s = %s", url_column, before_row[url_column])
-
-            extension = Path(file.filename or "").suffix.lower() or ".jpg"
-            filename = f"{event['slug']}-{image_type}-{uuid4().hex}{extension}"
-            target_path = POSTERS_DIR / filename
-
-            logger.info("Saving file to: %s", target_path)
-            with target_path.open("wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
-
-            file_size = target_path.stat().st_size
-            logger.info("File saved: %s (%d bytes)", target_path, file_size)
-
-            image_url = f"/static/posters/{filename}"
-            logger.info("New image_url: %s", image_url)
-
-            if image_type == "carousel":
-                result = await connection.execute(
-                    "UPDATE events SET carousel_image_url = $2 WHERE id = $1;",
-                    event_id,
-                    image_url,
-                )
-                logger.info("DB UPDATE result: %s", result)
-                after_row = await connection.fetchrow("SELECT carousel_image_url FROM events WHERE id = $1;", event_id)
-                logger.info("AFTER carousel_image_url = %s", after_row["carousel_image_url"])
-                return {"carousel_image_url": image_url}
-            elif image_type == "card":
-                result = await connection.execute(
-                    "UPDATE events SET card_image_url = $2 WHERE id = $1;",
-                    event_id,
-                    image_url,
-                )
-                logger.info("DB UPDATE result: %s", result)
-                after_row = await connection.fetchrow("SELECT card_image_url FROM events WHERE id = $1;", event_id)
-                logger.info("AFTER card_image_url = %s", after_row["card_image_url"])
-                return {"card_image_url": image_url}
-            else:
-                result = await connection.execute(
-                    "UPDATE events SET poster_url = $2 WHERE id = $1;",
-                    event_id,
-                    image_url,
-                )
-                logger.info("DB UPDATE result: %s", result)
-                after_row = await connection.fetchrow("SELECT poster_url FROM events WHERE id = $1;", event_id)
-                logger.info("AFTER poster_url = %s", after_row["poster_url"])
-                return {"poster_url": image_url}
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("Unexpected error during upload: %s\n%s", e, traceback.format_exc())
-        raise
+            return {"carousel_image_url": image_url}
+        elif image_type == "card":
+            await connection.execute(
+                "UPDATE events SET card_image_url = $2 WHERE id = $1;",
+                event_id,
+                image_url,
+            )
+            return {"card_image_url": image_url}
+        else:
+            await connection.execute(
+                "UPDATE events SET poster_url = $2 WHERE id = $1;",
+                event_id,
+                image_url,
+            )
+            return {"poster_url": image_url}

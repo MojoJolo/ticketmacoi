@@ -368,41 +368,43 @@ function EventListPage() {
   }, [])
 
   return (
-    <main className="page-shell">
-      <header className="page-header">
-        <h1>All Events</h1>
-        <p>Browse upcoming performances and live experiences.</p>
-      </header>
+    <>
+      <main className="page-shell">
+        <header className="page-header">
+          <h1>All Events</h1>
+          <p>Browse upcoming performances and live experiences.</p>
+        </header>
 
-      {loading && <p className="status-message">Loading events...</p>}
-      {error && <p className="status-message">{error}</p>}
-      {!loading && !error && events.length === 0 && (
-        <p className="status-message">No published events are available right now.</p>
-      )}
+        {loading && <p className="status-message">Loading events...</p>}
+        {error && <p className="status-message">{error}</p>}
+        {!loading && !error && events.length === 0 && (
+          <p className="status-message">No published events are available right now.</p>
+        )}
 
-      {!loading && !error && events.length > 0 && (
-        <section className="event-grid">
-          {events.map((event) => (
-            <Link className="event-card" key={event.id} to={buildEventPath(event)}>
-              <img className="event-card-image" src={event.card_image_url || event.poster_url} alt={event.title} />
-              <div className="event-card-content">
-                <div className="event-card-head">
-                  <h2>{event.title}</h2>
-                  <span className={`badge ${event.total_slots > 0 ? 'available' : 'sold-out'}`}>
-                    {event.total_slots > 0 ? 'Available' : 'Sold Out'}
-                  </span>
+        {!loading && !error && events.length > 0 && (
+          <section className="event-grid">
+            {events.map((event) => (
+              <Link className="event-card" key={event.id} to={buildEventPath(event)}>
+                <img className="event-card-image" src={event.card_image_url || event.poster_url} alt={event.title} />
+                <div className="event-card-content">
+                  <div className="event-card-head">
+                    <h2>{event.title}</h2>
+                    <span className={`badge ${event.total_slots > 0 ? 'available' : 'sold-out'}`}>
+                      {event.total_slots > 0 ? 'Available' : 'Sold Out'}
+                    </span>
+                  </div>
+                  <p className="event-date">{listDateFormatter.format(new Date(event.event_date))}</p>
+                  <p className="event-meta">{event.venue_name}</p>
+                  <p className="event-price">From {formatPrice(event.ticket_price)}</p>
                 </div>
-                <p className="event-date">{listDateFormatter.format(new Date(event.event_date))}</p>
-                <p className="event-meta">{event.venue_name}</p>
-                <p className="event-price">From {formatPrice(event.ticket_price)}</p>
-              </div>
-            </Link>
-          ))}
-        </section>
-      )}
+              </Link>
+            ))}
+          </section>
+        )}
+      </main>
 
       <Footer />
-    </main>
+    </>
   )
 }
 

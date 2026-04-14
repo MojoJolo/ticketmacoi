@@ -256,13 +256,13 @@ function CompactCard({ event }) {
     <Link className="compact-card" to={buildEventPath(event)}>
       <img className="compact-card-image" src={event.card_image_url || event.poster_url} alt={event.title} />
       <div className="compact-card-body">
+        <h3 className="compact-card-title">{event.title}</h3>
         <div className="compact-card-meta">
-          <h3 className="compact-card-title">{event.title}</h3>
+          <p className="compact-card-date">{listDateFormatter.format(new Date(event.event_date))}</p>
           {event.ticket_price != null && (
             <span className="compact-card-price">Starts at {formatPrice(event.ticket_price)}</span>
           )}
         </div>
-        <p className="compact-card-date">{listDateFormatter.format(new Date(event.event_date))}</p>
       </div>
     </Link>
   )

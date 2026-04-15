@@ -348,10 +348,13 @@ function HomePage() {
 
 /* ──────────── Events List Page ──────────── */
 
+const EVENTS_PER_PAGE = 12
+
 function EventListPage() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     async function loadEvents() {
@@ -366,6 +369,14 @@ function EventListPage() {
 
     loadEvents()
   }, [])
+
+  const totalPages = Math.ceil(events.length / EVENTS_PER_PAGE)
+  const pageEvents = events.slice((page - 1) * EVENTS_PER_PAGE, page * EVENTS_PER_PAGE)
+
+  function handlePageChange(newPage) {
+    setPage(newPage)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   return (
     <>
@@ -382,24 +393,54 @@ function EventListPage() {
         )}
 
         {!loading && !error && events.length > 0 && (
-          <section className="event-grid">
-            {events.map((event) => (
-              <Link className="event-card" key={event.id} to={buildEventPath(event)}>
-                <img className="event-card-image" src={event.card_image_url || event.poster_url} alt={event.title} />
-                <div className="event-card-content">
-                  <div className="event-card-head">
-                    <h2>{event.title}</h2>
-                    <span className={`badge ${event.total_slots > 0 ? 'available' : 'sold-out'}`}>
-                      {event.total_slots > 0 ? 'Available' : 'Sold Out'}
-                    </span>
+          <>
+            <section className="event-grid">
+              {pageEvents.map((event) => (
+                <Link className="event-card" key={event.id} to={buildEventPath(event)}>
+                  <img className="event-card-image" src={event.card_image_url || event.poster_url} alt={event.title} />
+                  <div className="event-card-content">
+                    <div className="event-card-head">
+                      <h2>{event.title}</h2>
+                      <span className={`badge ${event.total_slots > 0 ? 'available' : 'sold-out'}`}>
+                        {event.total_slots > 0 ? 'Available' : 'Sold Out'}
+                      </span>
+                    </div>
+                    <p className="event-date">{listDateFormatter.format(new Date(event.event_date))}</p>
+                    <p className="event-meta">{event.venue_name}</p>
+                    <p className="event-price">From {formatPrice(event.ticket_price)}</p>
                   </div>
-                  <p className="event-date">{listDateFormatter.format(new Date(event.event_date))}</p>
-                  <p className="event-meta">{event.venue_name}</p>
-                  <p className="event-price">From {formatPrice(event.ticket_price)}</p>
-                </div>
-              </Link>
-            ))}
-          </section>
+                </Link>
+              ))}
+            </section>
+
+            {totalPages > 1 && (
+              <nav className="pagination">
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page === 1}
+                >
+                  &lsaquo;
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    className={`pagination-btn${p === page ? ' active' : ''}`}
+                    onClick={() => handlePageChange(p)}
+                  >
+                    {p}
+                  </button>
+                ))}
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page === totalPages}
+                >
+                  &rsaquo;
+                </button>
+              </nav>
+            )}
+          </>
         )}
       </main>
 

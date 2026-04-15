@@ -348,7 +348,7 @@ function HomePage() {
 
 /* ──────────── Events List Page ──────────── */
 
-const EVENTS_PER_PAGE = 12
+const EVENTS_PER_PAGE = 16
 
 function EventListPage() {
   const [events, setEvents] = useState([])
